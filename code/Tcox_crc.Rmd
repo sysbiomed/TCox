@@ -16,7 +16,9 @@ editor_options:
 
 
 # Install packages and functions
-
+```{r}
+devtools::install_github("sysbiomed/glmSparseNet", ref = "prognostic.index")
+```
 ## Required libraries
 ```{r message = FALSE}
 library(SummarizedExperiment)
@@ -28,6 +30,7 @@ library(loose.rock)
 library(survival)
 library(GGally)
 library(ggplot2)
+library(survminer)
 library(glmnet)
 library(glmSparseNet)
 library(gplots)
@@ -35,7 +38,8 @@ library(readr)
 library(maftools)
 library(RTCGAToolbox)
 library(edgeR)
-
+#install.packages("biospear")
+library(biospear)
 ```
 
 
@@ -189,6 +193,8 @@ dim(normalf)
 
 # write.table(tumorf, "crcRNAseq.txt")
 # write.table(normalf, "normalRNAseq.txt")
+
+#write.table(datasurvf, "datasurv.txt")
 ```
 
 ## Clinical data
@@ -275,6 +281,8 @@ dim(datasurvread)
 
 datasurvf <- rbind(datasurv,datasurvread)
 dim(datasurvf)
+
+clinicalf <- rbind(clinic,clinicread)
 ```
 
 
@@ -438,7 +446,7 @@ coefs.v_twii3 <- twiner_coefs(cv.fit_twii3)
 
 fit.selected_twii3 <- twiner_genes(cv.fit_twii3)
 length(fit.selected_twii3)
-
+fit.selected_twii3
 
 #train
 train_twii03 <- train (coefs.v_twii3)
@@ -1242,6 +1250,7 @@ coefs.v_elastic3 <- coef(cv.fit_elastic_net3, s = 'lambda.min')[,1] %>% { .[. !=
 fit.selected_elastic3 <- which(cv.fit_elastic_net3$glmnet.fit$beta[,which(cv.fit_elastic_net3$cvm == min(cv.fit_elastic_net3$cvm))] != 0)
 
 length(fit.selected_elastic3)
+names(fit.selected_elastic3)
 ```
 
 
@@ -1454,6 +1463,7 @@ coefs.v_hub3 <- coef(cv.fit_hub3, s = 'lambda.min')[,1] %>% { .[. != 0]}
 fit.selected_hub3 <- which(cv.fit_hub3$glmnet.fit$beta[,which(cv.fit_hub3$cvm == min(cv.fit_hub3$cvm))] != 0)
 
 length(fit.selected_hub3)
+names(fit.selected_hub3)
 ```
 
 
@@ -1642,6 +1652,7 @@ coefs.v_orphan3 <- coef(cv.fit_orphan3, s = 'lambda.min')[,1] %>% { .[. != 0]}
 fit.selected_orphan3 <- which(cv.fit_orphan3$glmnet.fit$beta[,which(cv.fit_orphan3$cvm == min(cv.fit_orphan3$cvm))] != 0)
 
 length(fit.selected_orphan3)
+names(fit.selected_orphan3)
 ```
 
 
@@ -1806,6 +1817,7 @@ pvalues_orphan<-data.frame(alpha_points,pvalues_orphan_values,pvalues_orphan_met
 p_pvalues_orphan<-ggplot(data = pvalues_orphan, aes(x = alpha_points, y = pvalues_orphan_values,color= pvalues_orphan_method)) + geom_line()+geom_point()+theme_minimal()
 p_pvalues_orphan+ ylim(0, max(pvalues_orphan_values))
 ```
+
 
 
 
@@ -2431,3 +2443,1124 @@ qlf$table
 plotMD(qlf)
 abline(h=c(-1, 1), col="blue")
 ``` 
+# Survival with genes selected
+
+
+ANKRD26P1
+```{r}
+tumorf <- as.data.frame(t(tumorf))
+gene <- as.data.frame(tumorf$ANKRD26P1)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$ANKRD26P1` <= median(gene$`tumorf$ANKRD26P1`)] <- "low"
+gene$type[gene$`tumorf$ANKRD26P1` > median(gene$`tumorf$ANKRD26P1`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE, title = "ANKRD26P1")
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+CARKD
+```{r}
+gene <- as.data.frame(tumorf$CARKD)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$CARKD` <= median(gene$`tumorf$CARKD`)] <- "low"
+gene$type[gene$`tumorf$CARKD` > median(gene$`tumorf$CARKD`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "CARKD")
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+IGLON5
+```{r}
+gene <- as.data.frame(tumorf$IGLON5)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$IGLON5` <= median(gene$`tumorf$IGLON5`)] <- "low"
+gene$type[gene$`tumorf$IGLON5` > median(gene$`tumorf$IGLON5`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "IGLON5")
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+OSTN
+```{r}
+gene <- as.data.frame(tumorf$OSTN)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$OSTN` <= median(gene$`tumorf$OSTN`)] <- "low"
+gene$type[gene$`tumorf$OSTN` > median(gene$`tumorf$OSTN`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "OSTN")
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+
+RAB20
+```{r}
+gene <- as.data.frame(tumorf$RAB20)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$RAB20` <= median(gene$`tumorf$RAB20`)] <- "low"
+gene$type[gene$`tumorf$RAB20` > median(gene$`tumorf$RAB20`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "RAB20")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+TXNL4B
+```{r}
+gene <- as.data.frame(tumorf$TXNL4B)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$TXNL4B` <= median(gene$`tumorf$TXNL4B`)] <- "low"
+gene$type[gene$`tumorf$TXNL4B` > median(gene$`tumorf$TXNL4B`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "TXNL4B")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+AOX2P
+```{r}
+gene <- as.data.frame(tumorf$AOX2P)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$AOX2P` <= median(gene$`tumorf$AOX2P`)] <- "low"
+gene$type[gene$`tumorf$AOX2P` > median(gene$`tumorf$AOX2P`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "AOX2P")
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+DCLK3
+```{r}
+gene <- as.data.frame(tumorf$DCLK3)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$DCLK3` <= median(gene$`tumorf$DCLK3`)] <- "low"
+gene$type[gene$`tumorf$DCLK3` > median(gene$`tumorf$DCLK3`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "DCLK3")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+FCRL2
+```{r}
+gene <- as.data.frame(tumorf$FCRL2)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$FCRL2` <= median(gene$`tumorf$FCRL2`)] <- "low"
+gene$type[gene$`tumorf$FCRL2` > median(gene$`tumorf$FCRL2`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "FCRL2")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+SEPT7P2
+```{r}
+gene <- as.data.frame(tumorf$SEPT7P2)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$SEPT7P2` <= median(gene$`tumorf$SEPT7P2`)] <- "low"
+gene$type[gene$`tumorf$SEPT7P2` > median(gene$`tumorf$SEPT7P2`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "SEPT7P2")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+ASPHD1
+```{r}
+gene <- as.data.frame(tumorf$ASPHD1)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$ASPHD1` <= median(gene$`tumorf$ASPHD1`)] <- "low"
+gene$type[gene$`tumorf$ASPHD1` > median(gene$`tumorf$ASPHD1`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "ASPHD1")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+COL19A1
+```{r}
+gene <- as.data.frame(tumorf$COL19A1)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$COL19A1` <= median(gene$`tumorf$COL19A1`)] <- "low"
+gene$type[gene$`tumorf$COL19A1` > median(gene$`tumorf$COL19A1`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "COL19A1")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+DCP1A
+```{r}
+gene <- as.data.frame(tumorf$DCP1A)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$DCP1A` <= median(gene$`tumorf$DCP1A`)] <- "low"
+gene$type[gene$`tumorf$DCP1A` > median(gene$`tumorf$DCP1A`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "DCP1A")
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+FLJ16779
+```{r}
+gene <- as.data.frame(tumorf$FLJ16779)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$FLJ16779` <= median(gene$`tumorf$FLJ16779`)] <- "low"
+gene$type[gene$`tumorf$FLJ16779` > median(gene$`tumorf$FLJ16779`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "FLJ16779")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+LOC100303728
+```{r}
+gene <- as.data.frame(tumorf$LOC100303728)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$LOC100303728` <= median(gene$`tumorf$LOC100303728`)] <- "low"
+gene$type[gene$`tumorf$LOC100303728` > median(gene$`tumorf$LOC100303728`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "LOC100303728")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+PCDHA7
+```{r}
+gene <- as.data.frame(tumorf$PCDHA7)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$PCDHA7` <= median(gene$`tumorf$PCDHA7`)] <- "low"
+gene$type[gene$`tumorf$PCDHA7` > median(gene$`tumorf$PCDHA7`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "PCDHA7")
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+SNTG1
+```{r}
+gene <- as.data.frame(tumorf$SNTG1)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$SNTG1` <= median(gene$`tumorf$SNTG1`)] <- "low"
+gene$type[gene$`tumorf$SNTG1` > median(gene$`tumorf$SNTG1`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "SNTG1")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+COX4I2
+```{r}
+gene <- as.data.frame(tumorf$COX4I2)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$COX4I2` <= median(gene$`tumorf$COX4I2`)] <- "low"
+gene$type[gene$`tumorf$COX4I2` > median(gene$`tumorf$COX4I2`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "COX4I2")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+NXF2B
+```{r}
+gene <- as.data.frame(tumorf$NXF2B)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$NXF2B` <= median(gene$`tumorf$NXF2B`)] <- "low"
+gene$type[gene$`tumorf$NXF2B` > median(gene$`tumorf$NXF2B`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "NXF2B")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+TAC3
+```{r}
+gene <- as.data.frame(tumorf$TAC3)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$TAC3` <= median(gene$`tumorf$TAC3`)] <- "low"
+gene$type[gene$`tumorf$TAC3` > median(gene$`tumorf$TAC3`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "TAC3")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+C20orf106
+```{r}
+gene <- as.data.frame(tumorf$C20orf106)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$C20orf106` <= median(gene$`tumorf$C20orf106`)] <- "low"
+gene$type[gene$`tumorf$C20orf106` > median(gene$`tumorf$C20orf106`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "C20orf106")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+LOC285780
+```{r}
+gene <- as.data.frame(tumorf$LOC285780)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$LOC285780` <= median(gene$`tumorf$LOC285780`)] <- "low"
+gene$type[gene$`tumorf$LOC285780` > median(gene$`tumorf$LOC285780`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "LOC285780")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+OR2T5
+```{r}
+gene <- as.data.frame(tumorf$OR2T5)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$OR2T5` <= median(gene$`tumorf$OR2T5`)] <- "low"
+gene$type[gene$`tumorf$OR2T5` > median(gene$`tumorf$OR2T5`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "OR2T5")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+
+TERF2IP
+```{r}
+gene <- as.data.frame(tumorf$TERF2IP)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$TERF2IP` <= median(gene$`tumorf$TERF2IP`)] <- "low"
+gene$type[gene$`tumorf$TERF2IP` > median(gene$`tumorf$TERF2IP`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "TERF2IP")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+CAPN7
+```{r}
+gene <- as.data.frame(tumorf$CAPN7)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$CAPN7` <= median(gene$`tumorf$CAPN7`)] <- "low"
+gene$type[gene$`tumorf$CAPN7` > median(gene$`tumorf$CAPN7`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "CAPN7")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+OSBPL3
+```{r}
+gene <- as.data.frame(tumorf$OSBPL3)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$OSBPL3` <= median(gene$`tumorf$OSBPL3`)] <- "low"
+gene$type[gene$`tumorf$OSBPL3` > median(gene$`tumorf$OSBPL3`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "OSBPL3")
+
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
+TRIM67
+```{r}
+gene <- as.data.frame(tumorf$TRIM67)
+gene$rownames <- rownames(tumorf)
+
+gene$type[gene$`tumorf$TRIM67` <= median(gene$`tumorf$TRIM67`)] <- "low"
+gene$type[gene$`tumorf$TRIM67` > median(gene$`tumorf$TRIM67`)] <- "high"
+
+rownames(gene) <- gene$rownames
+
+pathology_stage <- merge(datasurvf, gene, by="row.names")
+
+time <- as.numeric(pathology_stage$time)
+status <- pathology_stage$status
+path_stage <- pathology_stage$type
+
+
+# Surv object
+kirc.surv = Surv(time,status == 1)
+#kirc.surv 
+# +did not died
+
+
+# Kaplan-Meier estimates
+fitkir <- survfit(Surv(as.numeric(time,status)) ~ path_stage)
+#fitkir
+#summary(fitkir)
+
+plot(fitkir)
+
+ggsurvplot(fitkir, data = pathology_stage, pval = TRUE,title = "TRIM671")
+
+
+
+
+# the log/rank test
+surv.stage <- survdiff(Surv(time,status==1)~path_stage)
+surv.stage
+
+```
+
