@@ -1,5 +1,4 @@
 # TCox
 
-"TCox: correlation-based regularization applied tocolorectal cancer survival data". Carolina Peixoto, Marta B. Lopes, Marta Martins, Luís Costa and Susana Vinga. 
-Special Issue "Molecular Biomarkers in Colorectal Adenocarcinoma" of International Journal of Molecular Sciences (submitted).
+Peixoto, Carolina, et al. "TCox: Correlation-Based Regularization Applied to Colorectal Cancer Survival Data." Biomedicines 8.11 (2020): 488.
 
